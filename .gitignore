@@ -1,8 +1,11 @@
 .env
 __pycache__/
 *.pyc
-data/daily/*
-!data/daily/.gitkeep
+output/
+data/transcripts/*
+!data/transcripts/.gitkeep
+data/minutes/*
+!data/minutes/.gitkeep
 data/checkin/*
 !data/checkin/.gitkeep
 data/members/*

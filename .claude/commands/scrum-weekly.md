@@ -2,11 +2,14 @@
 
 $ARGUMENTS
 
-1. 文字起こしテキスト（上記 or 入力を求める）を受け取る
+1. 文字起こしを取得する:
+   - 引数でファイルパスが渡された場合はそれを使う
+   - なければ `data/transcripts/今日の日付/refinement.txt` を確認し、あれば使う
+   - どちらもなければユーザーにファイルの場所を聞く
 
-2. 文字起こしを一時ファイルに保存し、議事録として保存:
+2. 議事録として保存:
 ```
-python3 cli.py save-daily refinement -f [一時ファイルパス]
+python3 cli.py save-daily refinement -f [ファイルパス]
 ```
 
 3. Backlogデータを取得:

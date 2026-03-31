@@ -8,7 +8,10 @@
 - `backlog_client.py` — Backlog REST APIクライアント
 - `config.py` — .envから環境変数を読み込み
 - `.claude/commands/` — スラッシュコマンド定義（7つ）
-- `data/` — チェックイン履歴、日次議事録、メンバープロフィール
+- `data/transcripts/` — 文字起こし原文（ユーザーが配置。`YYYY-MM-DD/種別.txt`）
+- `data/minutes/` — 議事録（CLIが自動生成。`YYYY-MM-DD/種別.md`）
+- `data/checkin/` — チェックイン履歴
+- `data/members/` — メンバープロフィール
 
 ## スクラムイベントの流れ
 

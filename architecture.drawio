@@ -1,0 +1,121 @@
+<mxfile host="Electron" modified="2026-03-31T14:14:58.831Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.6.1 Chrome/112.0.5615.204 Electron/24.6.1 Safari/537.36" version="21.6.1" etag="PDhRz16Vew9ZbALPvolv" type="device">
+  <diagram name="Backlog Scrum Assistant" id="architecture">
+    <mxGraphModel dx="1193" dy="750" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sm" value="👤 スクラムマスター" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;arcSize=20;" parent="1" vertex="1">
+          <mxGeometry x="460" y="40" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="backlog" value="☁️ Backlog API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=13;arcSize=20;" parent="1" vertex="1">
+          <mxGeometry x="80" y="260" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cli_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;arcSize=10;" parent="1" vertex="1">
+          <mxGeometry x="360" y="220" width="400" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="cli_label" value="⚙️ CLI（backlog-scrum-assistant）" style="text;html=1;fontStyle=1;fontSize=13;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="380" y="228" width="360" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cli_morning" value="朝会前レポート" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffacd;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="375" y="258" width="110" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="cli_sync" value="差分確認" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffacd;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="500" y="258" width="100" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="cli_weekly" value="週次準備" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffacd;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="615" y="258" width="100" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="cli_save" value="文字起こし保存/検索" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffacd;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="375" y="308" width="160" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="cli_html" value="HTML生成" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffacd;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="555" y="308" width="100" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="claude_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;arcSize=10;" parent="1" vertex="1">
+          <mxGeometry x="840" y="200" width="260" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="claude_label" value="🤖 Claude Code Skills" style="text;html=1;fontStyle=1;fontSize=13;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="855" y="208" width="230" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="skill1" value="/scrum-morning&#xa;朝会準備AI分析" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e8ff;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="855" y="238" width="105" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="skill2" value="/scrum-daily&#xa;議事録+差分分析" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e8ff;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="975" y="238" width="110" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="skill3" value="/scrum-weekly-prep&#xa;リファイン議題案" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e8ff;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="855" y="292" width="105" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="skill4" value="/scrum-retro-prep&#xa;ふりかえり議題案" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e8ff;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="975" y="292" width="110" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="skill5" value="/scrum-checkin&#xa;お題生成" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e8ff;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="855" y="346" width="105" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="skill6" value="/scrum-retro /scrum-weekly" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e8ff;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="975" y="346" width="110" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="data_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;arcSize=10;" parent="1" vertex="1">
+          <mxGeometry x="217" y="433" width="420" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="data_label" value="🗂️ data/（ローカルストレージ）" style="text;html=1;fontStyle=1;fontSize=13;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="232" y="441" width="390" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="d1" value="transcripts/&#xa;文字起こし原文" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="227" y="469" width="90" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" value="minutes/&#xa;議事録" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="332" y="469" width="90" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="d3" value="members/&#xa;メンバープロフィール" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="437" y="469" width="110" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="d4" value="checkin/&#xa;お題履歴" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="562" y="469" width="65" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="data_note" value="✅ 使い続けるほど蓄積・育っていく" style="text;html=1;fontSize=11;fillColor=none;strokeColor=none;fontStyle=2;" parent="1" vertex="1">
+          <mxGeometry x="232" y="519" width="390" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="html" value="🌐 HTML ダッシュボード&#xa;（議事録 / メンバー / チェックイン）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=12;arcSize=20;" parent="1" vertex="1">
+          <mxGeometry x="840" y="460" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="コマンド実行" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="1" source="sm" target="cli_box" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="スラッシュコマンド実行" style="edgeStyle=orthogonalEdgeStyle;html=1;entryX=0.5;entryY=0;strokeColor=#9673a6;fontColor=#9673a6;fontSize=11;fontStyle=1;" parent="1" target="claude_box" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="660" y="81" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="660" y="84" />
+              <mxPoint x="970" y="84" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" value="API取得" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#b85450;fontColor=#b85450;fontSize=11;fontStyle=1;" parent="1" source="backlog" target="cli_box" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="データ渡し" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#d6b656;fontColor=#b8860b;fontSize=11;fontStyle=1;" parent="1" source="cli_box" target="claude_box" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="保存" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;entryX=0.3;entryY=0;strokeColor=#82b366;fontColor=#82b366;fontSize=11;fontStyle=1;" parent="1" source="cli_box" target="data_box" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="議事録・プロフィール更新" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.3;exitY=1;entryX=0.86;entryY=-0.002;strokeColor=#9673a6;fontColor=#9673a6;fontSize=11;fontStyle=1;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="claude_box" target="data_box" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="HTML生成" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#b85450;fontColor=#b85450;fontSize=11;fontStyle=1;" parent="1" source="data_box" target="html" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="閲覧" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.25;entryX=0.5;entryY=0;dashed=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=11;fontStyle=1;exitDx=0;exitDy=0;" parent="1" source="sm" target="html" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1158" y="54" />
+              <mxPoint x="1158" y="412" />
+              <mxPoint x="970" y="412" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

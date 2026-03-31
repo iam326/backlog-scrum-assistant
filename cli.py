@@ -451,7 +451,7 @@ def save_daily(meeting_type, file, date):
     now = datetime.now(JST)
     target_date = date or now.strftime("%Y-%m-%d")
 
-    day_dir = DATA_DIR / "daily" / target_date
+    day_dir = DATA_DIR / "minutes" / target_date
     day_dir.mkdir(parents=True, exist_ok=True)
 
     filepath = day_dir / f"{meeting_type}.md"
@@ -469,15 +469,15 @@ def search_daily(keyword, member, days):
 
     KEYWORD: 検索キーワード
     """
-    daily_dir = DATA_DIR / "daily"
-    if not daily_dir.exists():
+    minutes_dir = DATA_DIR / "minutes"
+    if not minutes_dir.exists():
         click.echo("議事録データがありません。save-daily コマンドで議事録を保存してください。")
         return
 
     now = datetime.now(JST)
     results = []
 
-    for day_dir in sorted(daily_dir.iterdir(), reverse=True):
+    for day_dir in sorted(minutes_dir.iterdir(), reverse=True):
         if not day_dir.is_dir():
             continue
         try:
@@ -487,7 +487,7 @@ def search_daily(keyword, member, days):
         except ValueError:
             continue
 
-        for md_file in day_dir.glob("*.md"):
+        for md_file in sorted(day_dir.glob("*.md")):
             content = md_file.read_text(encoding="utf-8")
             if keyword not in content:
                 continue
@@ -512,6 +512,408 @@ def search_daily(keyword, member, days):
         click.echo(f"## {r['date']} / {r['type']}\n")
         click.echo(r["context"])
         click.echo("\n---\n")
+
+
+@cli.command()
+@click.option("--output", "-o", default="output/index.html", help="出力先（デフォルト: output/index.html）")
+@click.option("--demo", is_flag=True, help="デモデータ（demo/）を使用する")
+def html(output, demo):
+    """data/ 配下のデータをHTMLで出力する。"""
+    import markdown
+    import re
+
+    data_dir = Path(__file__).parent / ("demo" if demo else "data")
+    output_path = Path(output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def md_to_html(text):
+        return markdown.markdown(text, extensions=["tables", "fenced_code"])
+
+    def extract_section(content, heading):
+        """markdownから特定の ## セクションの中身を抽出"""
+        pattern = rf"^## {re.escape(heading)}\s*\n(.*?)(?=^## |\Z)"
+        m = re.search(pattern, content, re.MULTILINE | re.DOTALL)
+        return m.group(1).strip() if m else ""
+
+    def extract_name(content):
+        """markdownの # 見出しから名前を抽出"""
+        m = re.match(r"^# (.+)", content)
+        return m.group(1).strip() if m else ""
+
+    import json as _json
+
+    type_labels = {
+        "morning": "朝会準備", "standup": "朝会", "team": "チーム内共有",
+        "refinement": "リファインメント", "weekly-prep": "リファインメント準備",
+        "retro": "ふりかえり", "retro-prep": "ふりかえり準備",
+    }
+    type_order = ["morning", "standup", "team", "weekly-prep", "refinement", "retro-prep", "retro"]
+
+    # --- データ集計 ---
+    # チェックイン
+    checkin_lines = []
+    history_file = data_dir / "checkin" / "history.txt"
+    if history_file.exists():
+        checkin_lines = [l.strip() for l in history_file.read_text(encoding="utf-8").splitlines() if l.strip()]
+
+    # メンバー
+    members_data = []
+    members_dir = data_dir / "members"
+    if members_dir.exists():
+        for p in sorted([p for p in members_dir.glob("*.md") if p.name != "_template.md"]):
+            content = p.read_text(encoding="utf-8")
+            records_raw = extract_section(content, "記録")
+            record_dates = re.findall(r"### (\d{4}-\d{2}-\d{2})", records_raw)
+            members_data.append({
+                "file": p.stem, "content": content,
+                "name": extract_name(content) or p.stem,
+                "role": extract_section(content, "担当領域"),
+                "personality": extract_section(content, "ひととなり"),
+                "work_style": extract_section(content, "仕事の傾向"),
+                "comm": extract_section(content, "コミュニケーションの特徴"),
+                "stakeholder": extract_section(content, "顧客対応メモ"),
+                "condition": extract_section(content, "コンディション推移"),
+                "records_raw": records_raw,
+                "record_count": len(record_dates),
+            })
+
+    # 議事録
+    minutes_by_day = {}
+    type_counts = defaultdict(int)
+    minutes_dir = data_dir / "minutes"
+    if minutes_dir.exists():
+        for day_dir in sorted([d for d in minutes_dir.iterdir() if d.is_dir()], reverse=True):
+            md_files = sorted(day_dir.glob("*.md"), key=lambda f: type_order.index(f.stem) if f.stem in type_order else 99)
+            if md_files:
+                minutes_by_day[day_dir.name] = []
+                for md_file in md_files:
+                    content = md_file.read_text(encoding="utf-8")
+                    type_counts[md_file.stem] += 1
+                    minutes_by_day[day_dir.name].append({"type": md_file.stem, "content": content})
+
+    # グラフ用データ
+    member_names_json = _json.dumps([m["name"] for m in members_data], ensure_ascii=False)
+    member_records_json = _json.dumps([m["record_count"] for m in members_data])
+    type_chart_labels = _json.dumps([type_labels.get(t, t) for t in type_order if type_counts.get(t)], ensure_ascii=False)
+    type_chart_data = _json.dumps([type_counts[t] for t in type_order if type_counts.get(t)])
+    total_minutes = sum(type_counts.values())
+    total_days = len(minutes_by_day)
+    total_checkins = len(checkin_lines)
+
+    # --- HTML組立 ---
+    # チェックイン
+    checkin_rows = ""
+    for line in reversed(checkin_lines):
+        parts = line.split(" | ", 1)
+        if len(parts) == 2:
+            checkin_rows += f"<tr><td class='td-date'>{parts[0]}</td><td>{parts[1]}</td></tr>"
+    checkin_html = f"<table><thead><tr><th>日付</th><th>お題</th></tr></thead><tbody>{checkin_rows}</tbody></table>" if checkin_rows else "<p class='empty'>履歴なし</p>"
+
+    # メンバー
+    members_html = ""
+    for m in members_data:
+        badges = ""
+        if m["role"]:
+            for tag in re.split(r"[/・,、\n]", m["role"]):
+                tag = tag.strip().strip("-").strip()
+                if tag:
+                    badges += f"<span class='badge'>{tag}</span>"
+        records_html = md_to_html(m["records_raw"]) if m["records_raw"] else "<p class='muted'>記録なし</p>"
+        members_html += f"""
+        <div class="card member-card">
+          <div class="member-header">
+            <span class="member-name">{m['name']}</span>
+            <div class="member-badges">{badges}</div>
+            <span class="record-badge">{m['record_count']}日分の記録</span>
+          </div>
+          <div class="member-personality">
+            <div class="sec-title">💬 ひととなり</div>
+            {md_to_html(m['personality']) if m['personality'] else '<span class="muted">未記録</span>'}
+          </div>
+          <div class="two-col">
+            <div class="col-box">
+              <div class="sec-title">🔧 仕事の傾向</div>
+              {md_to_html(m['work_style']) if m['work_style'] else '<span class="muted">未記録</span>'}
+            </div>
+            <div class="col-box">
+              <div class="sec-title">🗣️ コミュニケーション</div>
+              {md_to_html(m['comm']) if m['comm'] else '<span class="muted">未記録</span>'}
+            </div>
+          </div>
+          {"<div class='col-box'><div class='sec-title'>🤝 ステークホルダー対応</div>" + md_to_html(m['stakeholder']) + "</div>" if m['stakeholder'] else ""}
+          {"<div class='condition-box'><div class='sec-title'>📊 コンディション推移</div>" + md_to_html(m['condition']) + "</div>" if m['condition'] else ""}
+          <details class="records-detail">
+            <summary>📝 観察記録を開く（{m['record_count']}件）</summary>
+            <div class="records-body">{records_html}</div>
+          </details>
+        </div>"""
+    if not members_html:
+        members_html = "<p class='empty'>メンバーデータなし</p>"
+
+    # 議事録
+    days_list = list(minutes_by_day.keys())
+    if days_list:
+        # 日付タブ
+        day_tabs = ""
+        day_panes = ""
+        for i, day in enumerate(days_list):
+            active = " active" if i == 0 else ""
+            day_tabs += f"""<button class="day-tab{active}" onclick="showDay('{day}')">{day}</button>"""
+            entries = minutes_by_day[day]
+            entry_items = ""
+            for e in entries:
+                label = type_labels.get(e["type"], e["type"])
+                entry_items += f"""
+                <details class="min-entry">
+                  <summary><span class="min-type">{label}</span></summary>
+                  <div class="min-body">{md_to_html(e['content'])}</div>
+                </details>"""
+            day_panes += f"""
+            <div id="day-{day}" class="day-pane{active}">
+              <div class="card min-group">
+                <div class="min-day-header">
+                  <span class="min-day">{day}</span>
+                  <span class="min-count">{len(entries)}件</span>
+                </div>
+                {entry_items}
+              </div>
+            </div>"""
+        minutes_html = f"""<div class="day-tabs">{day_tabs}</div>{day_panes}"""
+    else:
+        minutes_html = "<p class='empty'>議事録なし</p>"
+
+    now = datetime.now(JST)
+
+    page = f"""<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scrum Dashboard</title>
+<style>
+  :root {{
+    --bg: #101520; --surface: #1a1f2e; --surface2: #222838; --border: #2d3548;
+    --text: #d4d8e0; --text-sub: #9ca3b0; --text-muted: #6b7280;
+    --accent: #60a5fa; --accent-dim: rgba(96,165,250,0.12);
+    --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.12);
+    --green: #6ee7b7; --green-dim: rgba(110,231,183,0.10);
+    --amber: #fbbf24; --amber-dim: rgba(251,191,36,0.10);
+    --red: #f87171;
+  }}
+  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+  body {{
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.9; font-size: 15px;
+  }}
+  .wrap {{ max-width: 1280px; margin: 0 auto; padding: 0 40px; }}
+
+  /* ヘッダー */
+  header {{ background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 0; }}
+  header .wrap {{ display: flex; justify-content: space-between; align-items: center; }}
+  header h1 {{ font-size: 1.15rem; font-weight: 700; color: var(--text); }}
+  header .ts {{ color: var(--text-muted); font-size: 0.82rem; }}
+
+  /* タブ */
+  .tabs {{ display: flex; gap: 0; border-bottom: 1px solid var(--border); margin: 28px 0 32px; }}
+  .tab {{
+    padding: 11px 28px; cursor: pointer; border: none; background: none;
+    color: var(--text-sub); font-size: 0.92rem; font-weight: 600;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }}
+  .tab:hover {{ color: var(--text); }}
+  .tab.active {{ color: var(--accent); border-bottom-color: var(--accent); }}
+  .pane {{ display: none; }} .pane.active {{ display: block; }}
+
+  /* サマリーカード */
+  .stats {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }}
+  .stat {{
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px 24px; text-align: center;
+  }}
+  .stat-num {{ font-size: 2rem; font-weight: 700; color: var(--accent); line-height: 1.2; }}
+  .stat-label {{ font-size: 0.82rem; color: var(--text-sub); margin-top: 4px; }}
+  .stat:nth-child(2) .stat-num {{ color: var(--purple); }}
+  .stat:nth-child(3) .stat-num {{ color: var(--green); }}
+  .stat:nth-child(4) .stat-num {{ color: var(--amber); }}
+
+  /* グラフエリア */
+  .charts {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 36px; }}
+  .chart-box {{
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px; min-height: 240px;
+  }}
+  .chart-box h3 {{ font-size: 0.88rem; color: var(--text-sub); font-weight: 600; margin-bottom: 16px; }}
+
+  /* 共通カード */
+  .card {{
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 20px; overflow: hidden;
+  }}
+
+  /* テーブル */
+  table {{ width: 100%; border-collapse: collapse; }}
+  th {{ background: var(--surface2); text-align: left; font-weight: 600; color: var(--text-sub); font-size: 0.82rem; letter-spacing: 0.03em; }}
+  th, td {{ padding: 14px 24px; border-bottom: 1px solid var(--border); }}
+  tr:last-child td {{ border-bottom: none; }}
+  tr:hover td {{ background: var(--surface2); }}
+  .td-date {{ color: var(--text-muted); white-space: nowrap; width: 120px; }}
+
+  /* メンバーカード */
+  .member-card {{ padding: 28px 32px; }}
+  .member-header {{
+    display: flex; align-items: center; gap: 14px; margin-bottom: 22px;
+    padding-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  }}
+  .member-name {{ font-size: 1.25rem; font-weight: 700; color: var(--text); }}
+  .member-badges {{ display: flex; gap: 8px; flex-wrap: wrap; }}
+  .badge {{
+    background: var(--accent-dim); color: var(--accent); padding: 4px 14px;
+    border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+  }}
+  .record-badge {{
+    margin-left: auto; background: var(--green-dim); color: var(--green);
+    padding: 4px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+  }}
+  .member-personality {{
+    background: var(--purple-dim); border-radius: 8px;
+    padding: 20px 24px; margin-bottom: 24px;
+  }}
+  .member-personality p {{ margin: 8px 0; line-height: 2.0; }}
+  .sec-title {{
+    font-size: 0.78rem; font-weight: 700; color: var(--text-sub);
+    letter-spacing: 0.06em; margin-bottom: 12px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }}
+  .two-col {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }}
+  .col-box {{
+    background: var(--surface2); border-radius: 8px; padding: 20px 24px; margin-bottom: 12px;
+  }}
+  .col-box p, .col-box li {{ font-size: 0.92rem; line-height: 1.9; margin: 8px 0; }}
+  .col-box ul {{ margin: 8px 0 8px 20px; }}
+  .condition-box {{
+    background: var(--amber-dim); border-radius: 8px; padding: 20px 24px; margin-bottom: 16px;
+  }}
+  .condition-box p {{ font-size: 0.92rem; line-height: 1.9; margin: 8px 0; }}
+  .records-detail {{ border: 1px solid var(--border); border-radius: 8px; margin-top: 8px; }}
+  .records-detail summary {{
+    padding: 14px 24px; cursor: pointer; font-weight: 600; font-size: 0.88rem;
+    color: var(--text-sub); list-style: none;
+  }}
+  .records-detail summary:hover {{ background: var(--surface2); }}
+  .records-detail summary::before {{ content: "▸ "; margin-right: 6px; }}
+  .records-detail[open] summary::before {{ content: "▾ "; }}
+  .records-body {{
+    padding: 24px 28px; border-top: 1px solid var(--border);
+    max-height: 480px; overflow-y: auto;
+  }}
+  .records-body h3 {{
+    font-size: 0.9rem; color: var(--green); margin: 24px 0 10px;
+    padding-top: 16px; border-top: 1px dashed var(--border);
+  }}
+  .records-body h3:first-child {{ margin-top: 0; padding-top: 0; border-top: none; }}
+  .records-body ul {{ margin: 8px 0 8px 20px; }}
+  .records-body li {{ margin: 6px 0; font-size: 0.9rem; line-height: 1.9; }}
+  .records-body p {{ margin: 8px 0; font-size: 0.9rem; line-height: 1.9; }}
+
+  /* 議事録 - 日付タブ */
+  .day-tabs {{
+    display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap;
+  }}
+  .day-tab {{
+    padding: 8px 18px; cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-sub); font-size: 0.88rem;
+    font-weight: 600; border-radius: 20px; transition: all 0.15s;
+  }}
+  .day-tab:hover {{ border-color: var(--accent); color: var(--text); }}
+  .day-tab.active {{ background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }}
+  .day-pane {{ display: none; }}
+  .day-pane.active {{ display: block; }}
+
+  /* 議事録 */
+  .min-group {{ overflow: hidden; }}
+  .min-day-header {{
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 24px; background: var(--surface2);
+  }}
+  .min-day {{ font-weight: 700; font-size: 1.02rem; color: var(--text); }}
+  .min-count {{
+    margin-left: auto; background: var(--accent-dim); color: var(--accent);
+    padding: 3px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+  }}
+  .min-entry {{ border-top: 1px solid var(--border); }}
+  .min-entry summary {{
+    padding: 14px 28px; cursor: pointer; list-style: none;
+    font-size: 0.93rem; color: var(--text);
+  }}
+  .min-entry summary:hover {{ background: var(--surface2); }}
+  .min-entry summary::before {{ content: "▸ "; color: var(--text-muted); margin-right: 8px; }}
+  .min-entry[open] summary::before {{ content: "▾ "; }}
+  .min-type {{ color: var(--accent); font-weight: 600; }}
+  .min-body {{
+    padding: 28px 32px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.12);
+  }}
+  .min-body h1 {{ font-size: 1.15rem; color: var(--text); margin: 28px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }}
+  .min-body h1:first-child {{ margin-top: 0; }}
+  .min-body h2 {{ font-size: 1.02rem; color: var(--purple); margin: 24px 0 10px; }}
+  .min-body h3 {{ font-size: 0.93rem; color: var(--green); margin: 20px 0 8px; }}
+  .min-body p {{ margin: 10px 0; line-height: 1.9; }}
+  .min-body ul, .min-body ol {{ margin: 10px 0 10px 24px; }}
+  .min-body li {{ margin: 8px 0; line-height: 1.9; }}
+  .min-body table {{ width: 100%; border-collapse: collapse; margin: 16px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }}
+  .min-body strong {{ color: var(--amber); }}
+  .min-body code {{ background: var(--surface2); padding: 2px 8px; border-radius: 4px; font-size: 0.88rem; }}
+  .min-body pre {{ background: var(--surface2); padding: 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0; }}
+  .min-body pre code {{ background: none; padding: 0; }}
+  .min-body hr {{ border: none; border-top: 1px solid var(--border); margin: 28px 0; }}
+
+  .muted {{ color: var(--text-muted); }}
+  .empty {{ color: var(--text-muted); padding: 48px; text-align: center; }}
+  @media (max-width: 768px) {{
+    .wrap {{ padding: 0 16px; }}
+    .stats {{ grid-template-columns: repeat(2, 1fr); }}
+    .charts {{ grid-template-columns: 1fr; }}
+    .two-col {{ grid-template-columns: 1fr; }}
+  }}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Scrum Dashboard</h1>
+    <div class="ts">{now.strftime('%Y年%m月%d日 %H:%M')} 更新</div>
+  </div>
+</header>
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="show('minutes')">📄 議事録</button>
+    <button class="tab" onclick="show('members')">👤 メンバー</button>
+    <button class="tab" onclick="show('checkin')">✅ チェックイン</button>
+  </div>
+  <div id="minutes" class="pane active">{minutes_html}</div>
+  <div id="members" class="pane">{members_html}</div>
+  <div id="checkin" class="pane">{checkin_html}</div>
+</div>
+<script>
+function show(id) {{
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}}
+function showDay(day) {{
+  document.querySelectorAll('.day-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('day-'+day).classList.add('active');
+  event.target.classList.add('active');
+}}
+
+</script>
+</body>
+</html>"""
+
+    output_path.write_text(page, encoding="utf-8")
+    click.echo(f"HTMLを生成しました: {output_path}")
+    click.echo(f"ブラウザで開く: open {output_path}")
 
 
 if __name__ == "__main__":
