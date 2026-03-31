@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+data/daily/*
+!data/daily/.gitkeep
+data/checkin/*
+!data/checkin/.gitkeep
+data/members/*
+!data/members/.gitkeep
+!data/members/_template.md
